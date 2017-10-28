@@ -1,0 +1,12 @@
+{
+  "name": "express-internal-monitor",
+  "description": "Internal Monitor for Express.js",
+  "version": "1.0.0",
+  "license": "MIT",
+  "main": "index.js",
+  "dependencies": {
+    "debug": "^3.1.0",
+    "express": "^4.16.2"
+  },
+  "repository": "git://github.com/mykiimike/express-internal-monitor",
+}
