@@ -8,5 +8,17 @@
     "debug": "^3.1.0",
     "express": "^4.16.2"
   },
-  "repository": "git://github.com/mykiimike/express-internal-monitor",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mykiimike/express-internal-monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mykiimike/express-internal-monitor/issues"
+  },
+  "homepage": "https://github.com/mykiimike/express-internal-monitor#readme",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": ""
 }
