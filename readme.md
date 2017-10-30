@@ -46,6 +46,8 @@ Out of the box you will get statistics for:
  - Internal Handle measurement
  - Internal Router measurement (per Layer)
 
+Two examples are available in [test1.json](test1.json) and [test2.json](test2.json)
+
 ## Configuration Options
 
 ```javascript
@@ -75,6 +77,8 @@ For influxDB options are:
 - **url**: InfluxDB URL for example http://user:pass@localhost:8086..
 - **db**: Database to store data points
 - **concurrent**: Amount of concurrent insertion of data points, default to 2000
+- **heartbeat**: Setup application heartbeat, default to true
+- **heartbeatTimer**: Set application heartbeat timer in milliseconds, default to 1000 (1 second)
 
 ## InfluxDB Integration
 
@@ -109,3 +113,4 @@ influx -precision rfc3339
 Package under **MIT license**
 
  
+

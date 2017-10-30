@@ -32,7 +32,7 @@ function monitor(app, options) {
 		logFile: options.logFile || true,
 		statHandle: options.statHandle || true,
 		statRouter: options.statRouter || true,
-		serverName: options.serverName || "root",
+		serverName: options.serverName || "root"
 	}
 	
 	if(this.options.influxDB)
@@ -41,6 +41,7 @@ function monitor(app, options) {
 	// rotate logs
 	this.logRotate();
 
+	// run main program
 	function patchLayer(Layer) {
 		if(self.options.statRouter !== true)
 			return;
@@ -129,13 +130,34 @@ function monitor(app, options) {
 }
 
 monitor.prototype.influxInit = function(date, rail, timing) {
+	var self = this;
 	this.influxStack = [];
 	var opt = this.options.influxDB;
 
 	opt.concurrent = opt.concurrent || 1000;
+	opt.heartbeat = opt.heartbeat || true,
+	opt.heartbeatTimer = opt.heartbeatTimer || 1000,
 	opt.parsedURL = URL.parse(opt.url);
 	opt.writeURL = '/write?db='+opt.db+'&precision=ms';
+	
+	// heartbeat feature
+	if(opt.heartbeat == true) {
+		var timer;
+		var displace = new Date().getTime();
 
+		function heartbeat() {
+			var now = new Date().getTime();
+			var payload = 'heartbeat,server='+self.options.serverName+' value='+(now-displace)+' '+now+"\n";
+			displace = now;
+
+			// post payload 
+			self.influxPostData(payload, () => {
+				timer = setTimeout(heartbeat, opt.heartbeatTimer);
+			});
+		}
+		
+		timer = setTimeout(heartbeat, opt.heartbeatTimer);
+	}
 	debugInflux("Initializing connection to "+opt.url+' with '+opt.concurrent+' concurrent data points');
 }
 
