@@ -41,76 +41,87 @@ function monitor(app, options) {
 	// rotate logs
 	this.logRotate();
 
-	function bgScanner() {
-		debug('scanning router stack');
+	function patchLayer(Layer) {
+		if(self.options.statRouter !== true)
+			return;
 
-		var stack = self.app._router.stack;
+		var rName = Object.keys(Layer.route.methods)[0]+'.'+Layer.route.path;
 
-		for(var a=0; a<stack.length; a++) {
-			let Layer = stack[a];
-			
-			if(Layer.em)
-				continue;
-			Layer.em = {};
+		// patch handle
+		Layer.em.handle = Layer.handle;
+		Layer.handle = function(req, res, next) {
+			var start = new Date().getTime();
 
-			let name = normalize(Layer.name);
+			// Use writeHead to detect the end 
+			var r = res;
+			var old = r.writeHead;
+			res.writeHead = function() {
+				var end = new Date().getTime();
+				var res = end-start;
+				self.log('route', rName, res);
+				debugLayer('Route execution '+rName+' '+res+'ms')
 
-			if(self.options.statHandle === true) {
-				debug('Pathing Layer '+name);
-
-				// patch handle
-				Layer.em.handle = Layer.handle;
-				Layer.handle = function(req, res, next) {
-					var hName = name+'.handle';
-					var start = new Date().getTime();
-					var ret = Layer.em.handle.call(Layer, req, res, next);
-					var end = new Date().getTime();
-					var res = end-start;
-					self.log('layer', hName, res);
-					debugLayer('Handle execution '+hName+' '+res+'ms')
-					return(ret);
-				}
+				return(old.apply(r, arguments));
 			}
 
-			// patch routes
-			if(Layer.route && self.options.statRouter === true) {
-				// iterate on functions
-				for(var b=0; b<Layer.route.stack.length; b++) {
-					let rLayer = Layer.route.stack[b];
+			// call the handler
+			var ret = Layer.em.handle.call(Layer, req, res, next);
 
-					if(rLayer.em)
-						continue;
-					rLayer.em = {};
+			return(ret);
+		}
 
-					let rName = rLayer.method+'.'+Layer.route.path;
+		debugLayer('Patching Route '+rName)
+	}
 
-					// patch handle
-					rLayer.em.handle = rLayer.handle;
-					rLayer.handle = function(req, res, next) {
-						var start = new Date().getTime();
+	function patchRouter(Layer) {
+		var name = normalize(Layer.name);
 
-						// Use writeHead to detect the end 
-						var r = res;
-						var old = r.writeHead;
-						res.writeHead = function() {
-							var end = new Date().getTime();
-							var res = end-start;
-							self.log('route', rName, res);
-							debugLayer('Route layer execution '+rName+' '+res+'ms')
+		if(self.options.statHandle === true) {
+			debug('Pathing Layer '+name);
 
-							return(old.apply(r, arguments));
-						}
-
-						// call the handler
-						var ret = rLayer.em.handle.call(rLayer, req, res, next);
-
-						return(ret);
-					}
-				}
-
+			// patch handle
+			Layer.em.handle = Layer.handle;
+			Layer.handle = function(req, res, next) {
+				var hName = name+'.handle';
+				var start = new Date().getTime();
+				var ret = Layer.em.handle.call(Layer, req, res, next);
+				var end = new Date().getTime();
+				var res = end-start;
+				self.log('layer', hName, res);
+				debugLayer('Handle execution '+hName+' '+res+'ms')
+				return(ret);
 			}
 		}
 
+	}
+
+	function iterateRouter(Router) {
+
+		for(var a=0; a<Router.stack.length; a++) {
+			let Layer = Router.stack[a];
+
+			if(Layer.em)
+				continue;
+			Layer.em = {};
+			
+			// process sub routers
+			if(Layer.name == 'router') {
+				iterateRouter(Layer.handle);
+				patchRouter(Layer);
+			}
+			else if(Layer.name == 'bound dispatch') {
+				patchLayer(Layer);
+			}
+			else {
+				patchRouter(Layer);
+			}
+		}
+
+	}
+
+	function bgScanner() {
+		debug('scanning router stack');
+		iterateRouter(self.app._router);
 		setTimeout(bgScanner, 60000);
 	}
 
