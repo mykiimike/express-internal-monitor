@@ -1,7 +1,7 @@
 {
   "name": "express-internal-monitor",
   "description": "Internal Monitor for Express.js",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "license": "MIT",
   "main": "index.js",
   "dependencies": {
