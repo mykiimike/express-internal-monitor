@@ -207,7 +207,7 @@ monitor.prototype.influxInsert = function(date, zone, rail, timing) {
 			if(!el)
 				break;
 
-			payload += 'function,server='+self.options.serverName+',zone='+el[1]+',rail='+el[2]+' value='+el[3]+' '+el[0].getTime()+"\n";
+			payload += 'function,server='+self.options.serverName+',zone='+el[1]+',rail='+el[2]+' value='+el[3]+',count=1 '+el[0].getTime()+"\n";
 			counter++;
 		} while(counter < conf.concurrent);
 
